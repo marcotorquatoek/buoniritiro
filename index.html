@@ -1,4 +1,4 @@
-<!-- VERSION: 1.1.9 -->
+<!-- VERSION: 1.2.0 -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -42,7 +42,7 @@
 </head>
 <body>
 
-<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.1.9</span></h1>
+<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.2.0</span></h1>
 
 <div class="quicklinks">
   <a class="link-drive" href="https://drive.google.com/drive/folders/1lIHF58-xIimdBOYD72p9hb_8GcwHJ_tM" target="_blank">📁 Cartella Drive</a>
@@ -246,7 +246,9 @@ async function loadList() {
         <div class="meta">${new Date(item.date).toLocaleString("it-IT")}</div>
         <div style="font-family:Arial,sans-serif; font-size:14px; color:#111;">Note: ${item.note || "-"}</div>
         ${item.sentTo ? `<div class="meta">Inviato a: ${item.sentTo}</div>` : ""}
-        ${item.folderUrl ? `<a href="${item.folderUrl}" target="_blank" style="display:inline-block; margin-top:6px; padding:8px 12px; background:#fbbf24; color:#000; border-radius:6px; font-weight:bold; text-decoration:none;">📁 Apri cartella Drive</a>` : `<div class="meta">Cartella non disponibile (segnalazione precedente all'aggiornamento)</div>`}
+        ${item.imageUrls && item.imageUrls.length > 0
+          ? (item.folderUrl ? `<a href="${item.folderUrl}" target="_blank" style="display:inline-block; margin-top:6px; padding:8px 12px; background:#fbbf24; color:#000; border-radius:6px; font-weight:bold; text-decoration:none;">📁 Apri cartella Drive</a>` : `<div class="meta">Cartella non disponibile (segnalazione precedente all'aggiornamento)</div>`)
+          : `<div class="meta">Nessuna foto allegata</div>`}
       `;
       listEl.appendChild(div);
       if (isNew) markSeen(item.id);
