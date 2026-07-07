@@ -1,0 +1,176 @@
+<!-- VERSION: 1.0.2 -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Segnalazione Discordanze Resi</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; padding: 0 15px; background:#f5f5f5; }
+  h1 { font-size: 20px; }
+  .card { background:#fff; border-radius:8px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  label { display:block; margin-top:10px; font-weight:bold; font-size:14px; }
+  input, textarea { width:100%; padding:8px; margin-top:4px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; }
+  button { margin-top:14px; padding:10px 16px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; }
+  button:disabled { background:#999; }
+  .entry { border-bottom:1px solid #eee; padding:10px 0; }
+  .entry:last-child { border-bottom:none; }
+  .badge { background:#ef4444; color:#fff; font-size:11px; padding:2px 6px; border-radius:10px; margin-left:6px; }
+  .meta { color:#666; font-size:12px; }
+  .thumbs img { width:60px; height:60px; object-fit:cover; margin:4px 4px 0 0; border-radius:4px; }
+  #status { font-size:13px; margin-top:8px; }
+  .config-warning { background:#fef3c7; padding:10px; border-radius:6px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<h1>Segnalazione Discordanze Resi</h1>
+
+<div id="configWarning" class="config-warning" style="display:none;">
+  Configura APPS_SCRIPT_URL nel file index.html (vedi istruzioni fornite).
+</div>
+
+<div class="card">
+  <form id="reportForm">
+    <label>Numero Buono di Ritiro *</label>
+    <input type="text" id="buono" required>
+
+    <label>Note (es. attese 5 schede, arrivate 4)</label>
+    <textarea id="note" rows="3"></textarea>
+
+    <label>Foto</label>
+    <input type="file" id="cameraPhoto" accept="image/*" capture="environment">
+    <input type="file" id="galleryPhotos" accept="image/*" multiple style="margin-top:6px;">
+    <div id="thumbsPreview" class="thumbs"></div>
+
+    <button type="submit" id="submitBtn">Invia segnalazione</button>
+    <div id="status"></div>
+  </form>
+</div>
+
+<div class="card">
+  <h2 style="font-size:16px;">Segnalazioni recenti</h2>
+  <div id="list">Caricamento...</div>
+</div>
+
+<script>
+// ==== CONFIGURAZIONE: incolla qui l'URL del tuo Web App di Apps Script ====
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzreeaICF515jsy5cj-vnogH0id8j9gX_9INS2WxIs82nrXMGo1GAR7zblzBhTEGW1DMw/exec";
+// ===========================================================================
+
+const seenKey = "resi_seen_ids";
+function getSeen() { return JSON.parse(localStorage.getItem(seenKey) || "[]"); }
+function markSeen(id) {
+  const s = getSeen();
+  if (!s.includes(id)) { s.push(id); localStorage.setItem(seenKey, JSON.stringify(s)); }
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res({ name: file.name, mime: file.type, data: r.result.split(",")[1] });
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+let capturedFiles = [];
+
+function renderThumbs() {
+  const box = document.getElementById("thumbsPreview");
+  box.innerHTML = "";
+  capturedFiles.forEach((f, idx) => {
+    const url = URL.createObjectURL(f);
+    const wrap = document.createElement("span");
+    wrap.style.position = "relative";
+    wrap.innerHTML = `<img src="${url}"><span style="position:absolute;top:-6px;right:2px;background:#ef4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:11px;text-align:center;cursor:pointer;">x</span>`;
+    wrap.querySelector("span").addEventListener("click", () => { capturedFiles.splice(idx,1); renderThumbs(); });
+    box.appendChild(wrap);
+  });
+}
+
+document.getElementById("cameraPhoto").addEventListener("change", (e) => {
+  capturedFiles.push(...e.target.files);
+  e.target.value = "";
+  renderThumbs();
+});
+
+document.getElementById("galleryPhotos").addEventListener("change", (e) => {
+  capturedFiles.push(...e.target.files);
+  e.target.value = "";
+  renderThumbs();
+});
+
+document.getElementById("reportForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("INCOLLA_QUI")) {
+    document.getElementById("configWarning").style.display = "block";
+    return;
+  }
+  const btn = document.getElementById("submitBtn");
+  const status = document.getElementById("status");
+  btn.disabled = true;
+  status.textContent = "Invio in corso...";
+
+  const buono = document.getElementById("buono").value.trim();
+  const note = document.getElementById("note").value.trim();
+  const files = capturedFiles;
+
+  try {
+    const images = await Promise.all(files.map(fileToBase64));
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "create", buono, note, images })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      status.textContent = "Segnalazione inviata correttamente.";
+      document.getElementById("reportForm").reset();
+      capturedFiles = [];
+      renderThumbs();
+      loadList();
+    } else {
+      status.textContent = "Errore: " + (data.error || "sconosciuto");
+    }
+  } catch (err) {
+    status.textContent = "Errore di invio: " + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function loadList() {
+  const listEl = document.getElementById("list");
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("INCOLLA_QUI")) {
+    document.getElementById("configWarning").style.display = "block";
+    listEl.textContent = "";
+    return;
+  }
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL + "?action=list");
+    const data = await resp.json();
+    const seen = getSeen();
+    listEl.innerHTML = "";
+    (data.items || []).slice().reverse().forEach(item => {
+      const isNew = !seen.includes(item.id);
+      const div = document.createElement("div");
+      div.className = "entry";
+      div.innerHTML = `
+        <strong>Buono: ${item.buono}</strong> ${isNew ? '<span class="badge">NUOVO</span>' : ''}
+        <div class="meta">${item.date}</div>
+        <div>${item.note || ""}</div>
+        <div class="thumbs">${(item.imageUrls || []).map(u => `<a href="${u}" target="_blank"><img src="${u}"></a>`).join("")}</div>
+      `;
+      listEl.appendChild(div);
+      if (isNew) markSeen(item.id);
+    });
+    if (!data.items || data.items.length === 0) listEl.textContent = "Nessuna segnalazione.";
+  } catch (err) {
+    listEl.textContent = "Errore nel caricamento: " + err.message;
+  }
+}
+
+loadList();
+</script>
+</body>
+</html>
