@@ -1,10 +1,14 @@
-<!-- VERSION: 1.0.6 -->
+<!-- VERSION: 1.1.0 -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Segnalazione Discordanze Resi</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#2563eb">
 <style>
   body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; padding: 0 15px; background:#f5f5f5; }
   h1 { font-size: 20px; }
@@ -22,11 +26,32 @@
   .thumbs img { width:60px; height:60px; object-fit:cover; margin:4px 4px 0 0; border-radius:4px; }
   #status { font-size:13px; margin-top:8px; }
   .config-warning { background:#fef3c7; padding:10px; border-radius:6px; font-size:13px; }
+  .tabbar { display:flex; margin:16px 0; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  .tabbtn { flex:1; padding:12px; text-align:center; background:#e5e7eb; border:none; font-weight:bold; font-size:14px; cursor:pointer; }
+  .tabbtn.active { background:#2563eb; color:#fff; }
+  .quicklinks { display:flex; gap:8px; margin-bottom:16px; }
+  .quicklinks a { flex:1; text-align:center; padding:10px; border-radius:8px; font-size:13px; font-weight:bold; text-decoration:none; }
+  .link-drive { background:#fef3c7; color:#78350f; }
+  .link-sheet { background:#d1fae5; color:#065f46; }
+  .view { display:none; }
+  .view.active { display:block; }
 </style>
 </head>
 <body>
 
 <h1>Segnalazione Discordanze Resi</h1>
+
+<div class="quicklinks">
+  <a class="link-drive" href="https://drive.google.com/drive/folders/1lIHF58-xIimdBOYD72p9hb_8GcwHJ_tM" target="_blank">📁 Cartella Drive</a>
+  <a class="link-sheet" href="https://docs.google.com/spreadsheets/d/1XR0sJps5bj7Mig1lw_dahgdm8urRAxfTsLo5UNYW_TQ/edit" target="_blank">📊 Apri Excel</a>
+</div>
+
+<div class="tabbar">
+  <button class="tabbtn active" id="tabNewBtn" onclick="showView('new')">Nuova segnalazione</button>
+  <button class="tabbtn" id="tabHistoryBtn" onclick="showView('history')">Storico</button>
+</div>
+
+<div id="viewNew" class="view active">
 
 <div id="configWarning" class="config-warning" style="display:none;">
   Configura APPS_SCRIPT_URL nel file index.html (vedi istruzioni fornite).
@@ -52,12 +77,24 @@
   </form>
 </div>
 
+</div>
+
+<div id="viewHistory" class="view">
 <div class="card">
   <h2 style="font-size:16px;">Segnalazioni recenti</h2>
   <div id="list">Caricamento...</div>
 </div>
+</div>
 
 <script>
+function showView(name) {
+  document.getElementById("viewNew").classList.toggle("active", name === "new");
+  document.getElementById("viewHistory").classList.toggle("active", name === "history");
+  document.getElementById("tabNewBtn").classList.toggle("active", name === "new");
+  document.getElementById("tabHistoryBtn").classList.toggle("active", name === "history");
+  if (name === "history") loadList();
+}
+
 // ==== CONFIGURAZIONE: incolla qui l'URL del tuo Web App di Apps Script ====
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzreeaICF515jsy5cj-vnogH0id8j9gX_9INS2WxIs82nrXMGo1GAR7zblzBhTEGW1DMw/exec";
 // ===========================================================================
@@ -174,7 +211,7 @@ async function loadList() {
   }
 }
 
-loadList();
+document.getElementById("list").textContent = "Apri questa scheda per vedere le segnalazioni.";
 </script>
 </body>
 </html>
