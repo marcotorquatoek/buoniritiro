@@ -1,4 +1,4 @@
-<!-- VERSION: 1.1.1 -->
+<!-- VERSION: 1.1.2 -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -39,7 +39,7 @@
 </head>
 <body>
 
-<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.1.1</span></h1>
+<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.1.2</span></h1>
 
 <div class="quicklinks">
   <a class="link-drive" href="https://drive.google.com/drive/folders/1lIHF58-xIimdBOYD72p9hb_8GcwHJ_tM" target="_blank">📁 Cartella Drive</a>
@@ -107,11 +107,28 @@ function markSeen(id) {
 }
 
 function fileToBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res({ name: file.name, mime: file.type, data: r.result.split(",")[1] });
-    r.onerror = rej;
-    r.readAsDataURL(file);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      const maxDim = 1600;
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      resolve({ name: file.name.replace(/\.[^.]+$/, "") + ".jpg", mime: "image/jpeg", data: dataUrl.split(",")[1] });
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
@@ -198,9 +215,9 @@ async function loadList() {
       div.className = "entry";
       div.innerHTML = `
         <strong>Buono: ${item.buono}</strong> ${isNew ? '<span class="badge">NUOVO</span>' : ''}
-        <div class="meta">${item.date}</div>
+        <div class="meta">${new Date(item.date).toLocaleString("it-IT")}</div>
         <div>${item.note || ""}</div>
-        <div class="thumbs">${(item.imageUrls || []).map(u => `<a href="${u}" target="_blank"><img src="${u}"></a>`).join("")}</div>
+        ${item.folderUrl ? `<div><a href="${item.folderUrl}" target="_blank">📁 Apri foto su Drive</a></div>` : ""}
       `;
       listEl.appendChild(div);
       if (isNew) markSeen(item.id);
