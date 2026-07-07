@@ -1,4 +1,4 @@
-<!-- VERSION: 1.0.2 -->
+<!-- VERSION: 1.0.6 -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -10,7 +10,9 @@
   h1 { font-size: 20px; }
   .card { background:#fff; border-radius:8px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.1); }
   label { display:block; margin-top:10px; font-weight:bold; font-size:14px; }
-  input, textarea { width:100%; padding:8px; margin-top:4px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; }
+  input, textarea { width:100%; padding:8px; margin-top:4px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; font-size:16px; }
+  #buono { font-size:26px; font-weight:bold; padding:14px; text-align:center; }
+  #cameraBtn { display:block; width:100%; padding:22px; font-size:20px; font-weight:bold; background:#16a34a; color:#fff; border:none; border-radius:8px; margin-top:10px; }
   button { margin-top:14px; padding:10px 16px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:14px; }
   button:disabled { background:#999; }
   .entry { border-bottom:1px solid #eee; padding:10px 0; }
@@ -35,15 +37,17 @@
     <label>Numero Buono di Ritiro *</label>
     <input type="text" id="buono" required>
 
-    <label>Note (es. attese 5 schede, arrivate 4)</label>
+    <label>Note</label>
     <textarea id="note" rows="3"></textarea>
 
     <label>Foto</label>
-    <input type="file" id="cameraPhoto" accept="image/*" capture="environment">
-    <input type="file" id="galleryPhotos" accept="image/*" multiple style="margin-top:6px;">
+    <button type="button" id="cameraBtn" onclick="document.getElementById('cameraPhoto').click()">📷 APRI FOTOCAMERA</button>
+    <input type="file" id="cameraPhoto" accept="image/*" capture="environment" style="display:none;">
+    <input type="file" id="galleryPhotos" accept="image/*" multiple style="display:none;">
+    <button type="button" onclick="document.getElementById('galleryPhotos').click()" style="display:block; width:100%; padding:10px; font-size:13px; font-weight:bold; background:#86efac; color:#064e3b; border:none; border-radius:8px; margin-top:8px;">Seleziona dalla galleria</button>
     <div id="thumbsPreview" class="thumbs"></div>
 
-    <button type="submit" id="submitBtn">Invia segnalazione</button>
+    <button type="submit" id="submitBtn" style="display:block; width:100%; padding:20px; font-size:20px; font-weight:bold; text-align:center; margin-top:18px;">INVIA SEGNALAZIONE</button>
     <div id="status"></div>
   </form>
 </div>
