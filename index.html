@@ -1,4 +1,4 @@
-<!-- VERSION: 1.1.5 -->
+<!-- VERSION: 1.1.8 -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -42,7 +42,7 @@
 </head>
 <body>
 
-<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.1.5</span></h1>
+<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.1.8</span></h1>
 
 <div class="quicklinks">
   <a class="link-drive" href="https://drive.google.com/drive/folders/1lIHF58-xIimdBOYD72p9hb_8GcwHJ_tM" target="_blank">📁 Cartella Drive</a>
@@ -64,6 +64,9 @@
   <form id="reportForm">
     <label>Numero Buono di Ritiro *</label>
     <input type="text" id="buono" required>
+
+    <label>Invia a *</label>
+    <div id="recipientsBox">Caricamento destinatari...</div>
 
     <label>Note</label>
     <textarea id="note" rows="3"></textarea>
@@ -162,6 +165,23 @@ document.getElementById("galleryPhotos").addEventListener("change", (e) => {
   renderThumbs();
 });
 
+async function loadRecipients() {
+  const box = document.getElementById("recipientsBox");
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("INCOLLA_QUI")) return;
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL + "?action=recipients");
+    const data = await resp.json();
+    box.innerHTML = (data.items || []).map(r => `
+      <label style="font-weight:normal; display:flex; align-items:center; gap:6px; margin-top:6px;">
+        <input type="checkbox" class="recipientChk" value="${r.name}" style="width:auto;"> ${r.name}
+      </label>
+    `).join("") || "Nessun destinatario configurato.";
+  } catch (err) {
+    box.textContent = "Errore caricamento destinatari.";
+  }
+}
+loadRecipients();
+
 document.getElementById("reportForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("INCOLLA_QUI")) {
@@ -176,12 +196,17 @@ document.getElementById("reportForm").addEventListener("submit", async (e) => {
   const buono = document.getElementById("buono").value.trim();
   const note = document.getElementById("note").value.trim();
   const files = capturedFiles;
+  const recipients = Array.from(document.querySelectorAll(".recipientChk:checked")).map(c => c.value);
+  if (recipients.length === 0) {
+    document.getElementById("status").textContent = "Seleziona almeno un destinatario.";
+    return;
+  }
 
   try {
     const images = await Promise.all(files.map(fileToBase64));
     const resp = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "create", buono, note, images })
+      body: JSON.stringify({ action: "create", buono, note, images, recipients })
     });
     const data = await resp.json();
     if (data.ok) {
@@ -220,6 +245,7 @@ async function loadList() {
         <strong>Buono: ${item.buono}</strong> ${isNew ? '<span class="badge">NUOVO</span>' : ''}
         <div class="meta">${new Date(item.date).toLocaleString("it-IT")}</div>
         <div style="font-family:Arial,sans-serif; font-size:14px; color:#111;">Note: ${item.note || "-"}</div>
+        ${item.sentTo ? `<div class="meta">Inviato a: ${item.sentTo}</div>` : ""}
         ${item.folderUrl ? `<a href="${item.folderUrl}" target="_blank" style="display:inline-block; margin-top:6px; padding:8px 12px; background:#fbbf24; color:#000; border-radius:6px; font-weight:bold; text-decoration:none;">📁 Apri cartella Drive</a>` : `<div class="meta">Cartella non disponibile (segnalazione precedente all'aggiornamento)</div>`}
       `;
       listEl.appendChild(div);
