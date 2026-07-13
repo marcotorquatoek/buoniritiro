@@ -1,4 +1,4 @@
-<!-- VERSION: 1.2.0 -->
+<!-- VERSION: 1.2.1 -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -42,7 +42,7 @@
 </head>
 <body>
 
-<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.2.0</span></h1>
+<h1>Segnalazione Discordanze Resi <span style="font-size:12px; color:#999; font-weight:normal;">v1.2.1</span></h1>
 
 <div class="quicklinks">
   <a class="link-drive" href="https://drive.google.com/drive/folders/1lIHF58-xIimdBOYD72p9hb_8GcwHJ_tM" target="_blank">📁 Cartella Drive</a>
@@ -225,6 +225,13 @@ document.getElementById("reportForm").addEventListener("submit", async (e) => {
   }
 });
 
+function parseItDate(str) {
+  const m = String(str).match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return str;
+  const [, dd, mm, yyyy, hh, min, ss] = m;
+  return new Date(yyyy, mm - 1, dd, hh, min, ss).toLocaleString("it-IT");
+}
+
 async function loadList() {
   const listEl = document.getElementById("list");
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("INCOLLA_QUI")) {
@@ -243,7 +250,7 @@ async function loadList() {
       div.className = "entry";
       div.innerHTML = `
         <strong>Buono: ${item.buono}</strong> ${isNew ? '<span class="badge">NUOVO</span>' : ''}
-        <div class="meta">${new Date(item.date).toLocaleString("it-IT")}</div>
+        <div class="meta">${parseItDate(item.date)}</div>
         <div style="font-family:Arial,sans-serif; font-size:14px; color:#111;">Note: ${item.note || "-"}</div>
         ${item.sentTo ? `<div class="meta">Inviato a: ${item.sentTo}</div>` : ""}
         ${item.imageUrls && item.imageUrls.length > 0
